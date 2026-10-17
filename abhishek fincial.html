@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Khata - Personal Finance & Daily Tracker</title>
+  
+  <!-- Android & Mobile Web App Meta Tags -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Smart Khata">
+  <meta name="application-name" content="Smart Khata">
+  <meta name="theme-color" content="#1e3a8a">
+
+  <!-- Embedded Web App Manifest for Android Installation -->
+  <link rel="manifest" id="pwaManifest" href="data:application/manifest+json;utf-8,%7B%22name%22%3A%22Smart%20Khata%20Personal%20Finance%22%2C%22short_name%22%3A%22SmartKhata%22%2C%22description%22%3A%22Salary%20and%20Side%20Gig%20Accounting%20Tracker%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%231e3a8a%22%2C%22theme_color%22%3A%22%231e3a8a%22%2C%22orientation%22%3A%22portrait%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%3Butf8%2C%3Csvg%20xmlns%3D\'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg\'%20viewBox%3D\'0%200%20512%20512\'%3E%3Crect%20width%3D\'512\'%20height%3D\'512\'%20rx%3D\'110\'%20fill%3D\'%231e3a8a\'%2F%3E%3Cpath%20d%3D\'M140%20170h232v40H140zm0%2060h232v40H140zm0%2060h160v40H140z\'%20fill%3D\'%23ffffff\'%2F%3E%3Ccircle%20cx%3D\'360\'%20cy%3D\'320\'%20r%3D\'45\'%20fill%3D\'%23f59e0b\'%2F%3E%3C%2Fsvg%3E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js for smooth, interactive breakdown charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Phosphor Icons for crisp modern UI icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            },
+            surplus: '#16a34a',
+            expense: '#dc2626',
+            transfer: '#7c3aed'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Prevent iOS rubber-band and optimize touch interactions */
+    body {
+      -webkit-tap-highlight-color: transparent;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+    /* Custom scrollbar for transaction lists */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-14 font-sans antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Notification Toast Container -->
+  <div id="toast" class="fixed top-4 right-4 z-50 transform transition-all duration-300 translate-y-[-120%] opacity-0 pointer-events-none flex items-center gap-2 bg-slate-900 text-white text-sm font-medium px-4 py-3 rounded-xl shadow-xl max-w-sm">
+    <i id="toastIcon" class="ph-bold ph-info text-lg"></i>
+    <span id="toastMsg">Operation successful</span>
+  </div>
+
+  <!-- App Header -->
+  <header class="bg-gradient-to-r from-brand-900 via-brand-800 to-indigo-900 text-white shadow-lg sticky top-0 z-30">
+    <div class="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 text-white text-xl">
+          <i class="ph-duotone ph-wallet"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold tracking-tight">Smart Khata</h1>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-orange-400 text-slate-900 flex items-center gap-1 shadow-sm">
+              <i class="ph-fill ph-sparkle"></i> Gemini AI
+            </span>
+          </div>
+          <p class="text-xs text-blue-200">Salary • Decoration • Freelance</p>
+        </div>
+      </div>
+
+      <!-- Month Filter Picker & AI Advisor trigger & Install App Button -->
+      <div class="flex items-center gap-2">
+        <!-- Install to Android Button -->
+        <button 
+          id="btnInstallApp"
+          onclick="triggerAndroidInstall()" 
+          class="hidden items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl shadow transition-all active:scale-95 border border-white/20"
+          title="Install as Android App"
+        >
+          <i class="ph-bold ph-download-simple text-sm"></i>
+          <span>Install App</span>
+        </button>
+
+        <button 
+          onclick="openAiAdvisorModal()" 
+          class="hidden sm:flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-xl shadow-md transition-all active:scale-95 border border-white/20"
+          title="AI Financial Advisor"
+        >
+          <i class="ph-bold ph-brain text-sm"></i>
+          AI Audit
+        </button>
+        <div class="flex items-center gap-2 bg-white/10 border border-white/20 rounded-xl px-2.5 py-1.5 backdrop-blur-sm">
+          <i class="ph-bold ph-calendar text-blue-200 text-sm"></i>
+          <input 
+            type="month" 
+            id="monthFilter" 
+            class="bg-transparent text-white text-xs sm:text-sm font-medium outline-none cursor-pointer [color-scheme:dark]"
+            onchange="onMonthChange()"
+          >
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 py-5 space-y-5">
+
+    <!-- AI Assist Bar: Natural Language Entry & Bill Scanner -->
+    <section class="bg-gradient-to-br from-indigo-900 via-brand-900 to-slate-900 rounded-2xl p-4 text-white shadow-lg border border-indigo-500/20 relative overflow-hidden">
+      <div class="absolute -right-8 -bottom-8 w-36 h-36 bg-brand-500/10 rounded-full blur-2xl pointer-events-none"></div>
+      
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-400 to-orange-400 flex items-center justify-center text-slate-950 font-bold text-base shadow-sm">
+            <i class="ph-fill ph-magic-wand"></i>
+          </div>
+          <div>
+            <h2 class="text-sm font-bold flex items-center gap-1.5">
+              Gemini AI Smart Assistant
+              <span class="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-500/30 text-blue-200 border border-blue-400/30">Auto Parse</span>
+            </h2>
+            <p class="text-[11px] text-slate-300">Type or speak in Hinglish/English, or upload a photo receipt</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button 
+            type="button" 
+            onclick="openAiAdvisorModal()" 
+            class="sm:hidden px-3 py-1.5 rounded-xl bg-amber-400 text-slate-900 text-xs font-bold flex items-center gap-1 shadow"
+          >
+            <i class="ph-bold ph-brain text-sm"></i>
+            AI Audit
+          </button>
+          
+          <!-- Scan Receipt Button Trigger -->
+          <label class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-medium cursor-pointer transition-all flex items-center gap-1.5 backdrop-blur-sm active:scale-95">
+            <i class="ph-bold ph-camera text-amber-300 text-sm"></i>
+            <span>Scan Bill/Receipt</span>
+            <input type="file" id="receiptFileInput" accept="image/*" class="hidden" onchange="handleReceiptUpload(event)">
+          </label>
+        </div>
+      </div>
+
+      <!-- Natural language prompt input -->
+      <div class="relative">
+        <input 
+          type="text" 
+          id="aiSmartInput" 
+          placeholder='Try: "Got 5000 from stage decoration in cash" or "Spent 650 petrol salary bank"' 
+          class="w-full pl-3.5 pr-24 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 transition-all backdrop-blur-md"
+          onkeydown="if(event.key==='Enter') parseTransactionWithAI()"
+        >
+        <div class="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+          <button 
+            type="button" 
+            id="aiParseBtn" 
+            onclick="parseTransactionWithAI()" 
+            class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-bold text-xs shadow-sm flex items-center gap-1 transition-all active:scale-95"
+          >
+            <i class="ph-bold ph-sparkle text-xs"></i>
+            <span>Fill Form</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick prompts -->
+      <div class="flex flex-wrap gap-1.5 mt-2.5 pt-2 border-t border-white/10">
+        <span class="text-[10px] text-slate-400 self-center mr-1">Examples:</span>
+        <button onclick="applySamplePrompt(this.textContent)" class="text-[10px] bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/10 text-slate-300 transition-colors">Got 28000 monthly salary into salary bank</button>
+        <button onclick="applySamplePrompt(this.textContent)" class="text-[10px] bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/10 text-slate-300 transition-colors">Paid 1200 for fairy lights decoration cash</button>
+        <button onclick="applySamplePrompt(this.textContent)" class="text-[10px] bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded-full border border-white/10 text-slate-300 transition-colors">Transferred 4000 salary bank to savings liquid fund</button>
+      </div>
+
+      <!-- Inline AI Loading Indicator -->
+      <div id="aiLoadingIndicator" class="hidden mt-2.5 flex items-center gap-2 text-xs text-amber-300 font-medium animate-pulse">
+        <i class="ph-bold ph-spinner animate-spin text-base"></i>
+        <span id="aiLoadingMsg">Gemini AI is analyzing your entry...</span>
+      </div>
+    </section>
+
+    <!-- Monthly Summary Stat Cards -->
+    <section class="grid grid-cols-3 gap-2.5 sm:gap-4">
+      <!-- Inflow -->
+      <div class="bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200/80 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between text-emerald-600 mb-1">
+          <span class="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500">Inflow</span>
+          <div class="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
+            <i class="ph-bold ph-arrow-down-left text-emerald-600"></i>
+          </div>
+        </div>
+        <div id="statInflow" class="text-base sm:text-2xl font-bold text-slate-900 truncate">₹0</div>
+        <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate">Salary + Business + Gigs</p>
+      </div>
+
+      <!-- Outflow -->
+      <div class="bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200/80 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between text-rose-600 mb-1">
+          <span class="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500">Outflow</span>
+          <div class="w-7 h-7 rounded-lg bg-rose-50 flex items-center justify-center">
+            <i class="ph-bold ph-arrow-up-right text-rose-600"></i>
+          </div>
+        </div>
+        <div id="statOutflow" class="text-base sm:text-2xl font-bold text-slate-900 truncate">₹0</div>
+        <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate">Total Monthly Spent</p>
+      </div>
+
+      <!-- Net Surplus -->
+      <div class="bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200/80 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between text-brand-600 mb-1">
+          <span class="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500">Surplus</span>
+          <div class="w-7 h-7 rounded-lg bg-brand-50 flex items-center justify-center">
+            <i class="ph-bold ph-chart-line-up text-brand-600"></i>
+          </div>
+        </div>
+        <div id="statSurplus" class="text-base sm:text-2xl font-bold text-slate-900 truncate">₹0</div>
+        <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5 truncate">Cash Available / SIPs</p>
+      </div>
+    </section>
+
+    <!-- Top Insight Card / Account Balances Snapshot -->
+    <section class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <i class="ph-bold ph-vault text-brand-600"></i>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500">Account Running Balances</h2>
+        </div>
+        <span class="text-[11px] text-slate-400">All-time Net</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+          <div>
+            <div class="text-[11px] text-slate-500 font-medium">Primary Salary Bank</div>
+            <div id="balSalary" class="text-sm font-bold text-slate-800">₹0</div>
+          </div>
+          <i class="ph-duotone ph-bank text-xl text-blue-500"></i>
+        </div>
+        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+          <div>
+            <div class="text-[11px] text-slate-500 font-medium">Side Biz / Cash in Hand</div>
+            <div id="balCash" class="text-sm font-bold text-slate-800">₹0</div>
+          </div>
+          <i class="ph-duotone ph-money text-xl text-emerald-500"></i>
+        </div>
+        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+          <div>
+            <div class="text-[11px] text-slate-500 font-medium">Savings / Liquid Fund</div>
+            <div id="balSavings" class="text-sm font-bold text-slate-800">₹0</div>
+          </div>
+          <i class="ph-duotone ph-piggy-bank text-xl text-indigo-500"></i>
+        </div>
+      </div>
+    </section>
+
+    <!-- Grid Container for Chart + Form -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+      <!-- LEFT: Expense Chart & Category Breakdown (7 cols) -->
+      <section class="lg:col-span-7 bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-sm font-bold text-slate-800">Monthly Expense Breakdown</h2>
+              <p class="text-xs text-slate-400">Interactive visual share by category</p>
+            </div>
+            <span id="chartMonthLabel" class="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg">This Month</span>
+          </div>
+
+          <!-- Chart Container -->
+          <div class="relative w-full h-56 flex items-center justify-center">
+            <canvas id="expenseChart"></canvas>
+            <div id="chartPlaceholder" class="hidden absolute inset-0 flex flex-col items-center justify-center text-slate-300">
+              <i class="ph-duotone ph-chart-pie-slice text-5xl mb-2 text-slate-300"></i>
+              <p class="text-xs font-medium text-slate-400">No expenses recorded for this month</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category Legends with Percentages & Amounts -->
+        <div class="mt-4 pt-3 border-t border-slate-100">
+          <div id="categoryLegendList" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1">
+            <!-- Populated via JavaScript -->
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: Log Transaction Form (5 cols) -->
+      <section class="lg:col-span-5 bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm">
+        <div class="flex items-center justify-between mb-3.5">
+          <h2 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+            <i class="ph-bold ph-plus-circle text-brand-600"></i>
+            <span id="formTitleText">Record Entry</span>
+          </h2>
+          <div class="flex items-center gap-2">
+            <button 
+              type="button" 
+              onclick="document.getElementById('aiSmartInput').focus()" 
+              class="text-[11px] font-semibold text-brand-600 bg-brand-50 hover:bg-brand-100 px-2 py-1 rounded-lg transition-colors flex items-center gap-1"
+            >
+              <i class="ph-bold ph-sparkle text-amber-500"></i> AI Input
+            </button>
+            <button id="cancelEditBtn" onclick="cancelEditing()" class="hidden text-xs text-rose-500 font-medium hover:underline">
+              Cancel Edit
+            </button>
+          </div>
+        </div>
+
+        <!-- Mode Tabs -->
+        <div class="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl mb-4 text-xs font-semibold">
+          <button 
+            type="button" 
+            id="tabExpense" 
+            onclick="setTxType('expense')" 
+            class="py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900"
+          >
+            Expense
+          </button>
+          <button 
+            type="button" 
+            id="tabIncome" 
+            onclick="setTxType('income')" 
+            class="py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900"
+          >
+            Income
+          </button>
+          <button 
+            type="button" 
+            id="tabTransfer" 
+            onclick="setTxType('transfer')" 
+            class="py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900"
+          >
+            Transfer
+          </button>
+        </div>
+
+        <!-- Form Elements -->
+        <form id="txForm" onsubmit="handleFormSubmit(event)" class="space-y-3.5">
+          <input type="hidden" id="editTxId" value="">
+
+          <!-- Amount -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Amount (₹)</label>
+            <div class="relative">
+              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-base">₹</span>
+              <input 
+                type="number" 
+                id="txAmount" 
+                required 
+                min="0.01" 
+                step="any" 
+                placeholder="0.00" 
+                class="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-base"
+              >
+            </div>
+          </div>
+
+          <!-- Category (Hidden if Transfer) -->
+          <div id="categoryGroup">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Category</label>
+            <div class="relative">
+              <select 
+                id="txCategory" 
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all appearance-none cursor-pointer"
+              >
+                <!-- Populated by JS -->
+              </select>
+              <i class="ph-bold ph-caret-down absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
+            </div>
+          </div>
+
+          <!-- Source Account -->
+          <div id="sourceAccountGroup">
+            <label id="sourceAccountLabel" class="block text-xs font-semibold text-slate-600 mb-1">Account</label>
+            <div class="relative">
+              <select 
+                id="txAccount" 
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all appearance-none cursor-pointer"
+              >
+                <option value="Salary Bank">Primary Salary Bank</option>
+                <option value="Side Biz / Cash">Side Biz / Cash in Hand</option>
+                <option value="Savings / Liquid Fund">Savings / Liquid Fund</option>
+              </select>
+              <i class="ph-bold ph-caret-down absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
+            </div>
+          </div>
+
+          <!-- Destination Account (Only shown for Transfers) -->
+          <div id="destAccountGroup" class="hidden">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Transfer To Account</label>
+            <div class="relative">
+              <select 
+                id="txDestAccount" 
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all appearance-none cursor-pointer"
+              >
+                <option value="Side Biz / Cash">Side Biz / Cash in Hand</option>
+                <option value="Savings / Liquid Fund">Savings / Liquid Fund</option>
+                <option value="Salary Bank">Primary Salary Bank</option>
+              </select>
+              <i class="ph-bold ph-caret-down absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
+            </div>
+          </div>
+
+          <!-- Date Picker & Notes -->
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Date</label>
+              <input 
+                type="date" 
+                id="txDate" 
+                required 
+                class="w-full px-2.5 py-2 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-700 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+              >
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Notes / Description</label>
+              <input 
+                type="text" 
+                id="txNotes" 
+                placeholder="e.g. Wedding props, fuel..." 
+                class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-700 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+              >
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <button 
+            type="submit" 
+            id="submitBtn" 
+            class="w-full py-3 px-4 rounded-xl font-semibold text-sm text-white shadow-md transition-all flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 active:scale-[0.99]"
+          >
+            <i class="ph-bold ph-check text-base"></i>
+            <span id="submitBtnText">Add Expense</span>
+          </button>
+        </form>
+      </section>
+
+    </div>
+
+    <!-- Transaction History, Search & Filters -->
+    <section class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div>
+          <h2 class="text-sm font-bold text-slate-800">Transaction History</h2>
+          <p class="text-xs text-slate-400">All recorded transactions for the selected month</p>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Type Filter -->
+          <select 
+            id="filterType" 
+            onchange="renderAll()" 
+            class="text-xs font-semibold px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 focus:outline-none"
+          >
+            <option value="all">All Types</option>
+            <option value="expense">Expenses Only</option>
+            <option value="income">Income Only</option>
+            <option value="transfer">Transfers Only</option>
+          </select>
+
+          <!-- Account Filter -->
+          <select 
+            id="filterAccount" 
+            onchange="renderAll()" 
+            class="text-xs font-semibold px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 focus:outline-none"
+          >
+            <option value="all">All Accounts</option>
+            <option value="Salary Bank">Salary Bank</option>
+            <option value="Side Biz / Cash">Side Biz / Cash</option>
+            <option value="Savings / Liquid Fund">Savings Fund</option>
+          </select>
+
+          <!-- Ask AI Assistant Button -->
+          <button 
+            type="button" 
+            onclick="openChatDrawer()" 
+            class="px-2.5 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold hover:bg-indigo-100 transition-colors flex items-center gap-1 shadow-sm"
+          >
+            <i class="ph-bold ph-chat-circle-dots text-indigo-600"></i>
+            Ask AI
+          </button>
+        </div>
+      </div>
+
+      <!-- Transaction List Items -->
+      <div id="txListContainer" class="divide-y divide-slate-100 max-h-[460px] overflow-y-auto pr-1">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- Data Management & Backup Tools -->
+    <section class="bg-slate-100/80 border border-slate-200 rounded-2xl p-4 sm:p-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+            <i class="ph-bold ph-hard-drive"></i>
+            Data Backup & Privacy
+          </h3>
+          <p class="text-xs text-slate-500 mt-0.5">Your financial data stays 100% on your device. Export or backup regularly.</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Export to Excel (CSV) -->
+          <button 
+            type="button" 
+            onclick="exportCSV()" 
+            class="px-3 py-2 text-xs font-semibold rounded-xl bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm"
+          >
+            <i class="ph-bold ph-file-csv text-emerald-600 text-sm"></i>
+            Export CSV
+          </button>
+
+          <!-- Backup JSON -->
+          <button 
+            type="button" 
+            onclick="backupJSON()" 
+            class="px-3 py-2 text-xs font-semibold rounded-xl bg-brand-600 text-white hover:bg-brand-700 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm"
+          >
+            <i class="ph-bold ph-download-simple text-sm"></i>
+            Backup (JSON)
+          </button>
+
+          <!-- Restore JSON (Hidden file input trigger) -->
+          <label class="px-3 py-2 text-xs font-semibold rounded-xl bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer">
+            <i class="ph-bold ph-upload-simple text-brand-600 text-sm"></i>
+            Restore Data
+            <input type="file" id="restoreFileInput" accept=".json" class="hidden" onchange="restoreJSON(event)">
+          </label>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-5 max-w-xs w-full shadow-2xl text-center space-y-4">
+      <div class="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto text-2xl">
+        <i class="ph-bold ph-trash"></i>
+      </div>
+      <div>
+        <h4 class="text-base font-bold text-slate-800">Delete Entry?</h4>
+        <p class="text-xs text-slate-500 mt-1">This transaction will be permanently removed.</p>
+      </div>
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <button onclick="closeDeleteModal()" class="py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+          Cancel
+        </button>
+        <button id="confirmDeleteBtn" onclick="executeDelete()" class="py-2.5 rounded-xl bg-rose-600 text-xs font-semibold text-white hover:bg-rose-700 shadow-sm">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Financial Advisor / Monthly Audit Modal -->
+  <div id="aiAdvisorModal" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200">
+      <!-- Modal Header -->
+      <div class="p-4 bg-gradient-to-r from-brand-900 via-indigo-900 to-slate-900 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center text-lg font-bold shadow-sm">
+            <i class="ph-fill ph-brain"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold">Gemini AI Financial Audit</h3>
+            <p class="text-[11px] text-blue-200">Grounded analysis for <span id="advisorMonthName">Current Month</span></p>
+          </div>
+        </div>
+        <button onclick="closeAiAdvisorModal()" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-lg transition-colors">
+          <i class="ph-bold ph-x"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-4 sm:p-5 overflow-y-auto space-y-4 text-slate-700 text-xs sm:text-sm flex-1 leading-relaxed">
+        <div id="advisorLoading" class="py-12 flex flex-col items-center justify-center text-center space-y-3">
+          <div class="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+          <p class="font-semibold text-slate-700 text-sm">Gemini is auditing your income streams & spending...</p>
+          <p class="text-xs text-slate-400 max-w-xs">Checking salary vs decoration margins, savings runway, and high outflow categories.</p>
+        </div>
+
+        <div id="advisorContent" class="hidden space-y-3 prose prose-sm max-w-none">
+          <!-- Populated by Gemini LLM -->
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        <span class="text-[11px] text-slate-400">Powered by Gemini 3 Flash</span>
+        <div class="flex items-center gap-2">
+          <button 
+            onclick="generateMonthlyAudit()" 
+            class="px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs transition-colors flex items-center gap-1"
+          >
+            <i class="ph-bold ph-arrows-clockwise"></i>
+            Refresh
+          </button>
+          <button 
+            onclick="closeAiAdvisorModal()" 
+            class="px-4 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs shadow-sm transition-colors"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive AI Financial Assistant Drawer / Sheet -->
+  <div id="aiChatDrawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out border-l border-slate-200">
+    <!-- Drawer Header -->
+    <div class="p-4 bg-slate-900 text-white flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-400 to-indigo-500 flex items-center justify-center text-white text-base font-bold">
+          <i class="ph-fill ph-chat-centered-dots"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold">Khata AI Assistant</h3>
+          <p class="text-[11px] text-slate-300">Ask questions about your finances & income</p>
+        </div>
+      </div>
+      <button onclick="closeChatDrawer()" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-base transition-colors">
+        <i class="ph-bold ph-x"></i>
+      </button>
+    </div>
+
+    <!-- Suggested questions -->
+    <div class="p-2.5 bg-slate-50 border-b border-slate-200 flex gap-1.5 overflow-x-auto text-[11px]">
+      <button onclick="sendChatMessage(this.textContent)" class="whitespace-nowrap px-2.5 py-1 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-brand-500 font-medium">How much did I earn from decoration?</button>
+      <button onclick="sendChatMessage(this.textContent)" class="whitespace-nowrap px-2.5 py-1 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-brand-500 font-medium">What is my biggest expense this month?</button>
+      <button onclick="sendChatMessage(this.textContent)" class="whitespace-nowrap px-2.5 py-1 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-brand-500 font-medium">How to optimize savings from my ₹28k salary?</button>
+    </div>
+
+    <!-- Chat Messages Box -->
+    <div id="chatMessages" class="p-4 flex-1 overflow-y-auto space-y-3.5 text-xs sm:text-sm">
+      <div class="flex gap-2.5 items-start">
+        <div class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 text-sm mt-0.5">
+          <i class="ph-fill ph-robot"></i>
+        </div>
+        <div class="bg-slate-100 rounded-2xl rounded-tl-sm p-3 text-slate-800 leading-relaxed max-w-[85%]">
+          Hello! I can answer questions about your salary, decoration business income, freelance cash flow, and daily spends based on your actual logged transactions. What would you like to know?
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Input Area -->
+    <div class="p-3 border-t border-slate-200 bg-white">
+      <form onsubmit="handleChatSubmit(event)" class="relative flex items-center gap-1.5">
+        <input 
+          type="text" 
+          id="chatInput" 
+          placeholder="Ask anything about your money..." 
+          class="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+        >
+        <button 
+          type="submit" 
+          id="chatSendBtn" 
+          class="absolute right-1.5 w-8 h-8 rounded-lg bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center text-sm transition-colors shadow-sm"
+        >
+          <i class="ph-bold ph-paper-plane-right"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================
+       1. DATA STRUCTURE & DEFAULT CATEGORIES
+       ========================================================== */
+    const CATEGORIES = {
+      income: [
+        { name: 'Salary', icon: 'ph-money', color: '#10b981' },
+        { name: 'Decoration Business', icon: 'ph-sparkle', color: '#f59e0b' },
+        { name: 'Outside Work / Freelance', icon: 'ph-laptop', color: '#3b82f6' },
+        { name: 'Other Inflow', icon: 'ph-arrow-down-right', color: '#6366f1' }
+      ],
+      expense: [
+        { name: 'House Rent & Maintenance', color: '#3b82f6', icon: 'ph-house' },
+        { name: 'Groceries & Milk', color: '#10b981', icon: 'ph-shopping-cart' },
+        { name: 'Electricity & Utilities', color: '#eab308', icon: 'ph-lightning' },
+        { name: 'Bike Petrol & Commute', color: '#f97316', icon: 'ph-moped' },
+        { name: 'Decoration Raw Materials', color: '#ec4899', icon: 'ph-paint-brush' },
+        { name: 'Family & Baby Care', color: '#8b5cf6', icon: 'ph-heart' },
+        { name: 'Tea, Dining & Leisure', color: '#06b6d4', icon: 'ph-coffee' },
+        { name: 'Other Expenses', color: '#64748b', icon: 'ph-receipt' }
+      ]
+    };
+
+    // Global state
+    let transactions = [];
+    let currentType = 'expense';
+    let chartInstance = null;
+    let pendingDeleteId = null;
+    let chatHistory = [];
+    let deferredPrompt = null;
+
+    // Listen for PWA Install Prompt on Android
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const installBtn = document.getElementById('btnInstallApp');
+      if (installBtn) {
+        installBtn.classList.remove('hidden');
+        installBtn.classList.add('flex');
+      }
+    });
+
+    async function triggerAndroidInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          showToast('App installed on phone!', 'ph-check');
+        }
+        deferredPrompt = null;
+        document.getElementById('btnInstallApp').classList.add('hidden');
+      } else {
+        showToast('Tap 3 dots (⋮) in Chrome > "Add to Home screen"', 'ph-info');
+      }
+    }
+
+    // Gemini API Configuration (Canvas provides runtime injection when key is empty string)
+    const apiKey = "";
+
+    async function callGeminiWithBackoff(url, payload, maxRetries = 3) {
+      let delay = 1000;
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (res.status === 429 && attempt < maxRetries - 1) {
+            await new Promise(r => setTimeout(r, delay));
+            delay *= 2;
+            continue;
+          }
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error?.message || `HTTP error! status: ${res.status}`);
+          }
+          return await res.json();
+        } catch (err) {
+          if (attempt === maxRetries - 1) throw err;
+          await new Promise(r => setTimeout(r, delay));
+          delay *= 2;
+        }
+      }
+    }
+
+    /* ==========================================================
+       2. INITIALIZATION & STORAGE
+       ========================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      // Set today's date in form
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('txDate').value = today;
+
+      // Set month picker to current month (YYYY-MM)
+      const currentYearMonth = today.slice(0, 7);
+      document.getElementById('monthFilter').value = currentYearMonth;
+
+      // Load transactions from localStorage or seed initial sample if first time
+      loadData();
+      setTxType('expense');
+      renderAll();
+    });
+
+    function loadData() {
+      const raw = localStorage.getItem('smart_khata_txs');
+      if (raw) {
+        try {
+          transactions = JSON.parse(raw);
+        } catch (e) {
+          transactions = [];
+        }
+      } else {
+        // Sample starter data reflecting user's scenario
+        const currentYM = new Date().toISOString().slice(0, 7);
+        transactions = [
+          {
+            id: 'tx_init_1',
+            date: `${currentYM}-01`,
+            type: 'income',
+            category: 'Salary',
+            amount: 28000,
+            account: 'Salary Bank',
+            notes: 'In-hand salary credit (PF deducted)'
+          },
+          {
+            id: 'tx_init_2',
+            date: `${currentYM}-04`,
+            type: 'income',
+            category: 'Decoration Business',
+            amount: 5000,
+            account: 'Side Biz / Cash',
+            notes: 'Stage backdrop decoration project'
+          },
+          {
+            id: 'tx_init_3',
+            date: `${currentYM}-06`,
+            type: 'income',
+            category: 'Outside Work / Freelance',
+            amount: 3500,
+            account: 'Side Biz / Cash',
+            notes: 'Weekend accounting & consulting fee'
+          },
+          {
+            id: 'tx_init_4',
+            date: `${currentYM}-05`,
+            type: 'expense',
+            category: 'House Rent & Maintenance',
+            amount: 7500,
+            account: 'Salary Bank',
+            notes: 'House rent paid via UPI'
+          },
+          {
+            id: 'tx_init_5',
+            date: `${currentYM}-07`,
+            type: 'expense',
+            category: 'Groceries & Milk',
+            amount: 3200,
+            account: 'Salary Bank',
+            notes: 'Monthly staples & supermarket supplies'
+          },
+          {
+            id: 'tx_init_6',
+            date: `${currentYM}-08`,
+            type: 'expense',
+            category: 'Decoration Raw Materials',
+            amount: 1400,
+            account: 'Side Biz / Cash',
+            notes: 'Fairy lights & drape cloth'
+          },
+          {
+            id: 'tx_init_7',
+            date: `${currentYM}-10`,
+            type: 'expense',
+            category: 'Bike Petrol & Commute',
+            amount: 900,
+            account: 'Side Biz / Cash',
+            notes: 'Fuel tank refill'
+          },
+          {
+            id: 'tx_init_8',
+            date: `${currentYM}-12`,
+            type: 'transfer',
+            category: 'Transfer',
+            amount: 5000,
+            account: 'Salary Bank',
+            destAccount: 'Savings / Liquid Fund',
+            notes: 'Emergency fund auto-reserve'
+          }
+        ];
+        saveData();
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem('smart_khata_txs', JSON.stringify(transactions));
+    }
+
+    /* ==========================================================
+       3. UI STATE & TAB SWITCHING
+       ========================================================== */
+    function setTxType(type) {
+      currentType = type;
+
+      const tabExpense = document.getElementById('tabExpense');
+      const tabIncome = document.getElementById('tabIncome');
+      const tabTransfer = document.getElementById('tabTransfer');
+      const submitBtn = document.getElementById('submitBtn');
+      const submitBtnText = document.getElementById('submitBtnText');
+      const catGroup = document.getElementById('categoryGroup');
+      const destGroup = document.getElementById('destAccountGroup');
+      const sourceLabel = document.getElementById('sourceAccountLabel');
+
+      // Reset base tab styling
+      [tabExpense, tabIncome, tabTransfer].forEach(t => {
+        t.className = 'py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900';
+      });
+
+      if (type === 'expense') {
+        tabExpense.className = 'py-2 rounded-lg transition-all bg-white text-rose-600 font-bold shadow-sm';
+        submitBtn.className = 'w-full py-3 px-4 rounded-xl font-semibold text-sm text-white shadow-md transition-all flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 active:scale-[0.99]';
+        submitBtnText.textContent = document.getElementById('editTxId').value ? 'Update Expense' : 'Add Expense';
+        catGroup.classList.remove('hidden');
+        destGroup.classList.add('hidden');
+        sourceLabel.textContent = 'Deducted From Account';
+        populateCategories('expense');
+      } else if (type === 'income') {
+        tabIncome.className = 'py-2 rounded-lg transition-all bg-white text-emerald-600 font-bold shadow-sm';
+        submitBtn.className = 'w-full py-3 px-4 rounded-xl font-semibold text-sm text-white shadow-md transition-all flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99]';
+        submitBtnText.textContent = document.getElementById('editTxId').value ? 'Update Income' : 'Add Income';
+        catGroup.classList.remove('hidden');
+        destGroup.classList.add('hidden');
+        sourceLabel.textContent = 'Credited Into Account';
+        populateCategories('income');
+      } else {
+        tabTransfer.className = 'py-2 rounded-lg transition-all bg-white text-brand-700 font-bold shadow-sm';
+        submitBtn.className = 'w-full py-3 px-4 rounded-xl font-semibold text-sm text-white shadow-md transition-all flex items-center justify-center gap-2 bg-brand-700 hover:bg-brand-800 active:scale-[0.99]';
+        submitBtnText.textContent = document.getElementById('editTxId').value ? 'Update Transfer' : 'Record Transfer';
+        catGroup.classList.add('hidden');
+        destGroup.classList.remove('hidden');
+        sourceLabel.textContent = 'From Account';
+      }
+    }
+
+    function populateCategories(type, selectedValue = '') {
+      const select = document.getElementById('txCategory');
+      select.innerHTML = '';
+      (CATEGORIES[type] || []).forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.name;
+        opt.textContent = cat.name;
+        if (cat.name === selectedValue) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    function onMonthChange() {
+      const selected = document.getElementById('monthFilter').value;
+      if (!selected) return;
+      const [year, month] = selected.split('-');
+      const dateObj = new Date(year, month - 1, 1);
+      const monthStr = dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      document.getElementById('chartMonthLabel').textContent = monthStr;
+      renderAll();
+    }
+
+    /* ==========================================================
+       4. FORM SUBMISSION, EDIT & DELETE LOGIC
+       ========================================================== */
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const amount = parseFloat(document.getElementById('txAmount').value);
+      const date = document.getElementById('txDate').value;
+      const account = document.getElementById('txAccount').value;
+      const notes = document.getElementById('txNotes').value.trim();
+      const editId = document.getElementById('editTxId').value;
+
+      if (!amount || amount <= 0) {
+        showToast('Please enter a valid amount', 'ph-warning');
+        return;
+      }
+      if (!date) {
+        showToast('Please pick a date', 'ph-warning');
+        return;
+      }
+
+      let category = 'Transfer';
+      let destAccount = '';
+
+      if (currentType !== 'transfer') {
+        category = document.getElementById('txCategory').value;
+      } else {
+        destAccount = document.getElementById('txDestAccount').value;
+        if (account === destAccount) {
+          showToast('Source and Destination accounts cannot be the same', 'ph-warning');
+          return;
+        }
+      }
+
+      if (editId) {
+        // Edit existing
+        const idx = transactions.findIndex(t => t.id === editId);
+        if (idx !== -1) {
+          transactions[idx] = {
+            id: editId,
+            date,
+            type: currentType,
+            category,
+            amount,
+            account,
+            destAccount: currentType === 'transfer' ? destAccount : undefined,
+            notes: notes || category
+          };
+          showToast('Transaction updated', 'ph-check');
+        }
+      } else {
+        // Create new
+        const newTx = {
+          id: 'tx_' + Date.now(),
+          date,
+          type: currentType,
+          category,
+          amount,
+          account,
+          destAccount: currentType === 'transfer' ? destAccount : undefined,
+          notes: notes || (currentType === 'transfer' ? `Transfer to ${destAccount}` : category)
+        };
+        transactions.unshift(newTx);
+        showToast('Entry saved successfully', 'ph-check');
+      }
+
+      saveData();
+      cancelEditing();
+      renderAll();
+    }
+
+    function editTransaction(id) {
+      const tx = transactions.find(t => t.id === id);
+      if (!tx) return;
+
+      document.getElementById('editTxId').value = tx.id;
+      document.getElementById('txAmount').value = tx.amount;
+      document.getElementById('txDate').value = tx.date;
+      document.getElementById('txAccount').value = tx.account;
+      document.getElementById('txNotes').value = tx.notes;
+
+      setTxType(tx.type);
+
+      if (tx.type !== 'transfer') {
+        populateCategories(tx.type, tx.category);
+      } else if (tx.destAccount) {
+        document.getElementById('txDestAccount').value = tx.destAccount;
+      }
+
+      document.getElementById('formTitleText').textContent = 'Edit Entry';
+      document.getElementById('cancelEditBtn').classList.remove('hidden');
+
+      // Smooth scroll to form on mobile
+      document.getElementById('txForm').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cancelEditing() {
+      document.getElementById('editTxId').value = '';
+      document.getElementById('txAmount').value = '';
+      document.getElementById('txNotes').value = '';
+      document.getElementById('formTitleText').textContent = 'Record Entry';
+      document.getElementById('cancelEditBtn').classList.add('hidden');
+      setTxType(currentType);
+    }
+
+    function promptDelete(id) {
+      pendingDeleteId = id;
+      document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+      pendingDeleteId = null;
+      document.getElementById('deleteModal').classList.add('hidden');
+    }
+
+    function executeDelete() {
+      if (!pendingDeleteId) return;
+      transactions = transactions.filter(t => t.id !== pendingDeleteId);
+      saveData();
+      closeDeleteModal();
+      showToast('Entry deleted', 'ph-trash');
+      renderAll();
+    }
+
+    /* ==========================================================
+       5. COMPUTATIONS & RENDERING
+       ========================================================== */
+    function renderAll() {
+      const selectedMonth = document.getElementById('monthFilter').value; // e.g. "2026-10"
+
+      // 1. Overall Account Running Balances (all-time)
+      let balSalary = 0;
+      let balCash = 0;
+      let balSavings = 0;
+
+      transactions.forEach(t => {
+        if (t.type === 'income') {
+          if (t.account === 'Salary Bank') balSalary += t.amount;
+          else if (t.account === 'Side Biz / Cash') balCash += t.amount;
+          else if (t.account === 'Savings / Liquid Fund') balSavings += t.amount;
+        } else if (t.type === 'expense') {
+          if (t.account === 'Salary Bank') balSalary -= t.amount;
+          else if (t.account === 'Side Biz / Cash') balCash -= t.amount;
+          else if (t.account === 'Savings / Liquid Fund') balSavings -= t.amount;
+        } else if (t.type === 'transfer') {
+          // Deduct from source
+          if (t.account === 'Salary Bank') balSalary -= t.amount;
+          else if (t.account === 'Side Biz / Cash') balCash -= t.amount;
+          else if (t.account === 'Savings / Liquid Fund') balSavings -= t.amount;
+          // Add to dest
+          if (t.destAccount === 'Salary Bank') balSalary += t.amount;
+          else if (t.destAccount === 'Side Biz / Cash') balCash += t.amount;
+          else if (t.destAccount === 'Savings / Liquid Fund') balSavings += t.amount;
+        }
+      });
+
+      document.getElementById('balSalary').textContent = formatINR(balSalary);
+      document.getElementById('balCash').textContent = formatINR(balCash);
+      document.getElementById('balSavings').textContent = formatINR(balSavings);
+
+      // 2. Filter for Selected Month
+      const monthTxs = transactions.filter(t => t.date.startsWith(selectedMonth));
+
+      let monthInflow = 0;
+      let monthOutflow = 0;
+      const expenseCatTotals = {};
+
+      monthTxs.forEach(t => {
+        if (t.type === 'income') {
+          monthInflow += t.amount;
+        } else if (t.type === 'expense') {
+          monthOutflow += t.amount;
+          expenseCatTotals[t.category] = (expenseCatTotals[t.category] || 0) + t.amount;
+        }
+      });
+
+      const monthSurplus = monthInflow - monthOutflow;
+
+      // Update stat counters
+      document.getElementById('statInflow').textContent = formatINR(monthInflow);
+      document.getElementById('statOutflow').textContent = formatINR(monthOutflow);
+      const surplusElem = document.getElementById('statSurplus');
+      surplusElem.textContent = formatINR(monthSurplus);
+      surplusElem.className = 'text-base sm:text-2xl font-bold truncate ' + (monthSurplus >= 0 ? 'text-emerald-600' : 'text-rose-600');
+
+      // 3. Render Chart & Legend
+      renderExpenseChart(expenseCatTotals, monthOutflow);
+
+      // 4. Render Transactions List with active filters
+      renderTransactionsList(monthTxs);
+    }
+
+    /* ==========================================================
+       6. CHART.JS VISUAL BREAKDOWN
+       ========================================================== */
+    function renderExpenseChart(catTotals, totalExpense) {
+      const placeholder = document.getElementById('chartPlaceholder');
+      const canvas = document.getElementById('expenseChart');
+      const legendList = document.getElementById('categoryLegendList');
+      legendList.innerHTML = '';
+
+      const labels = Object.keys(catTotals);
+      const values = Object.values(catTotals);
+
+      if (labels.length === 0 || totalExpense <= 0) {
+        canvas.style.display = 'none';
+        placeholder.classList.remove('hidden');
+        legendList.innerHTML = '<p class="text-xs text-slate-400 col-span-2 text-center py-2">No category data to display</p>';
+        if (chartInstance) {
+          chartInstance.destroy();
+          chartInstance = null;
+        }
+        return;
+      }
+
+      canvas.style.display = 'block';
+      placeholder.classList.add('hidden');
+
+      // Get colors from CATEGORIES lookup
+      const backgroundColors = labels.map(label => {
+        const found = CATEGORIES.expense.find(c => c.name === label);
+        return found ? found.color : '#94a3b8';
+      });
+
+      // Populate custom HTML Legend with percentage and rupee amount
+      labels.forEach((label, i) => {
+        const amt = values[i];
+        const pct = ((amt / totalExpense) * 100).toFixed(1);
+        const color = backgroundColors[i];
+
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between p-1.5 rounded-lg bg-slate-50 border border-slate-100 text-xs';
+        item.innerHTML = `
+          <div class="flex items-center gap-1.5 truncate pr-1">
+            <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${color}"></span>
+            <span class="font-medium text-slate-700 truncate">${label}</span>
+          </div>
+          <div class="shrink-0 text-right">
+            <span class="font-bold text-slate-800">${formatINR(amt)}</span>
+            <span class="text-[10px] text-slate-400 ml-1 font-medium">(${pct}%)</span>
+          </div>
+        `;
+        legendList.appendChild(item);
+      });
+
+      // Chart Configuration
+      const ctx = canvas.getContext('2d');
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: values,
+            backgroundColor: backgroundColors,
+            borderWidth: 2,
+            borderColor: '#ffffff',
+            hoverOffset: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '68%',
+          plugins: {
+            legend: {
+              display: false // Using our clean custom HTML legend
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const val = context.raw;
+                  const pct = ((val / totalExpense) * 100).toFixed(1);
+                  return ` ${context.label}: ${formatINR(val)} (${pct}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    /* ==========================================================
+       7. TRANSACTIONS LIST RENDERING
+       ========================================================== */
+    function renderTransactionsList(monthTxs) {
+      const container = document.getElementById('txListContainer');
+      const filterType = document.getElementById('filterType').value;
+      const filterAccount = document.getElementById('filterAccount').value;
+
+      let filtered = monthTxs.filter(t => {
+        const typeMatch = (filterType === 'all') || (t.type === filterType);
+        const accMatch = (filterAccount === 'all') || (t.account === filterAccount) || (t.destAccount === filterAccount);
+        return typeMatch && accMatch;
+      });
+
+      // Sort by date descending
+      filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      container.innerHTML = '';
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="py-10 text-center text-slate-400">
+            <i class="ph-duotone ph-receipt-x text-4xl mb-1 text-slate-300"></i>
+            <p class="text-xs font-medium">No transactions match your filter criteria.</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(t => {
+        const row = document.createElement('div');
+        row.className = 'py-3 flex items-center justify-between gap-3 group hover:bg-slate-50/80 px-2 rounded-xl transition-colors';
+
+        // Badge styling & icon based on transaction type
+        let badgeBg = 'bg-rose-50 text-rose-600';
+        let sign = '-';
+        let iconName = 'ph-arrow-up-right';
+
+        if (t.type === 'income') {
+          badgeBg = 'bg-emerald-50 text-emerald-600';
+          sign = '+';
+          iconName = 'ph-arrow-down-left';
+        } else if (t.type === 'transfer') {
+          badgeBg = 'bg-purple-50 text-purple-600';
+          sign = '↔';
+          iconName = 'ph-arrows-left-right';
+        }
+
+        const dateFormatted = new Date(t.date).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short'
+        });
+
+        row.innerHTML = `
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 rounded-xl ${badgeBg} flex items-center justify-center shrink-0 text-lg">
+              <i class="ph-bold ${iconName}"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-800 truncate">${escapeHtml(t.notes || t.category)}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full font-medium ${badgeBg}">${t.category}</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-0.5 truncate">
+                ${dateFormatted} • <span class="font-medium text-slate-600">${t.account}</span>
+                ${t.type === 'transfer' ? ` ➔ <span class="font-medium text-slate-600">${t.destAccount}</span>` : ''}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-xs sm:text-sm font-bold ${t.type === 'income' ? 'text-emerald-600' : (t.type === 'expense' ? 'text-rose-600' : 'text-purple-600')}">
+              ${sign}${formatINR(t.amount)}
+            </span>
+            <div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+              <button 
+                onclick="editTransaction('${t.id}')" 
+                class="w-7 h-7 rounded-lg hover:bg-slate-200 text-slate-500 flex items-center justify-center text-sm transition-colors"
+                title="Edit Entry"
+              >
+                <i class="ph-bold ph-pencil-simple"></i>
+              </button>
+              <button 
+                onclick="promptDelete('${t.id}')" 
+                class="w-7 h-7 rounded-lg hover:bg-rose-100 text-rose-500 flex items-center justify-center text-sm transition-colors"
+                title="Delete Entry"
+              >
+                <i class="ph-bold ph-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    /* ==========================================================
+       8. BACKUP, RESTORE & CSV EXPORT
+       ========================================================== */
+    // 1. JSON Backup
+    function backupJSON() {
+      if (transactions.length === 0) {
+        showToast('No data to backup!', 'ph-warning');
+        return;
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(transactions, null, 2));
+      const downloadAnchor = document.createElement('a');
+      const now = new Date().toISOString().split('T')[0];
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `smart_khata_backup_${now}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('JSON Backup downloaded', 'ph-check');
+    }
+
+    // 2. JSON Restore
+    function restoreJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (Array.isArray(parsed)) {
+            // Merge avoiding duplicate IDs without native confirm
+            const existingIds = new Set(transactions.map(t => t.id));
+            let addedCount = 0;
+            parsed.forEach(item => {
+              if (item && item.id && item.amount && !existingIds.has(item.id)) {
+                transactions.push(item);
+                existingIds.add(item.id);
+                addedCount++;
+              }
+            });
+            saveData();
+            renderAll();
+            showToast(`Restored ${addedCount} entries successfully`, 'ph-check');
+          } else {
+            showToast('Invalid backup file format', 'ph-warning');
+          }
+        } catch (err) {
+          showToast('Failed to parse backup JSON', 'ph-warning');
+        }
+        event.target.value = ''; // Reset file input
+      };
+      reader.readAsText(file);
+    }
+
+    // 3. CSV Spreadsheet Export
+    function exportCSV() {
+      if (transactions.length === 0) {
+        showToast('No transactions to export', 'ph-warning');
+        return;
+      }
+      let csv = 'Transaction ID,Date,Type,Category,Amount (INR),Source Account,Destination Account,Notes\n';
+      transactions.forEach(t => {
+        const dest = t.destAccount || '';
+        const note = (t.notes || '').replace(/"/g, '""');
+        csv += `"${t.id}","${t.date}","${t.type}","${t.category}","${t.amount}","${t.account}","${dest}","${note}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const now = new Date().toISOString().split('T')[0];
+      link.setAttribute('href', url);
+      link.setAttribute('download', `smart_khata_ledger_${now}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('CSV downloaded successfully', 'ph-check');
+    }
+
+    /* ==========================================================
+       9. GEMINI AI SMART CAPABILITIES
+       ========================================================== */
+
+    async function parseTransactionWithAI() {
+      const input = document.getElementById('aiSmartInput');
+      const text = input.value.trim();
+      if (!text) {
+        showToast('Please type an expense or income description', 'ph-warning');
+        return;
+      }
+
+      const loader = document.getElementById('aiLoadingIndicator');
+      const loadMsg = document.getElementById('aiLoadingMsg');
+      loader.classList.remove('hidden');
+      loadMsg.textContent = 'Gemini AI is parsing details...';
+
+      const systemPrompt = `You are an expert personal accountant for an Indian professional who has:
+1) Fixed monthly salary (₹28,000 net, with ₹3,800 PF deduction).
+2) Decoration business (stage decor, floral, props).
+3) Outside freelance/consulting work.
+
+Available accounts:
+- "Salary Bank" (Primary salary bank)
+- "Side Biz / Cash" (Side gig earnings & cash in hand)
+- "Savings / Liquid Fund" (Liquid savings / investments)
+
+Available Income categories:
+["Salary", "Decoration Business", "Outside Work / Freelance", "Other Inflow"]
+
+Available Expense categories:
+["House Rent & Maintenance", "Groceries & Milk", "Electricity & Utilities", "Bike Petrol & Commute", "Decoration Raw Materials", "Family & Baby Care", "Tea, Dining & Leisure", "Other Expenses"]
+
+Current date reference is ${new Date().toISOString().split('T')[0]}.
+Parse user natural language prompt into the exact JSON schema provided. If type is "transfer", set "category" to "Transfer" and identify both account and destAccount.`;
+
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      const payload = {
+        contents: [{ parts: [{ text: text }] }],
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              "type": { "type": "STRING", "enum": ["income", "expense", "transfer"] },
+              "amount": { "type": "NUMBER" },
+              "category": { "type": "STRING" },
+              "account": { "type": "STRING", "enum": ["Salary Bank", "Side Biz / Cash", "Savings / Liquid Fund"] },
+              "destAccount": { "type": "STRING", "enum": ["Salary Bank", "Side Biz / Cash", "Savings / Liquid Fund"] },
+              "notes": { "type": "STRING" },
+              "date": { "type": "STRING" }
+            },
+            "required": ["type", "amount", "account"]
+          }
+        }
+      };
+
+      try {
+        const result = await callGeminiWithBackoff(apiUrl, payload);
+        const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!jsonText) throw new Error("No response from AI");
+
+        const parsed = JSON.parse(jsonText);
+        applyParsedDataToForm(parsed);
+        showToast('AI filled the form! Review and hit Save.', 'ph-sparkle');
+        input.value = '';
+      } catch (err) {
+        showToast('AI parse failed: ' + (err.message || 'Check connection'), 'ph-warning');
+      } finally {
+        loader.classList.add('hidden');
+      }
+    }
+
+    function applySamplePrompt(txt) {
+      document.getElementById('aiSmartInput').value = txt;
+      parseTransactionWithAI();
+    }
+
+    function applyParsedDataToForm(data) {
+      if (data.type) {
+        setTxType(data.type);
+      }
+      if (data.amount) {
+        document.getElementById('txAmount').value = data.amount;
+      }
+      if (data.date) {
+        document.getElementById('txDate').value = data.date;
+      }
+      if (data.account) {
+        document.getElementById('txAccount').value = data.account;
+      }
+      if (data.type === 'transfer' && data.destAccount) {
+        document.getElementById('txDestAccount').value = data.destAccount;
+      }
+      if (data.type !== 'transfer' && data.category) {
+        populateCategories(data.type, data.category);
+      }
+      if (data.notes) {
+        document.getElementById('txNotes').value = data.notes;
+      }
+
+      // Scroll to form smoothly
+      document.getElementById('txForm').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function handleReceiptUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const loader = document.getElementById('aiLoadingIndicator');
+      const loadMsg = document.getElementById('aiLoadingMsg');
+      loader.classList.remove('hidden');
+      loadMsg.textContent = 'Scanning receipt image with Gemini Vision...';
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const base64Data = e.target.result.split(',')[1];
+          const mimeType = file.type || 'image/jpeg';
+
+          const prompt = `Analyze this receipt / bill / invoice image.
+Extract:
+1. Total amount (Indian Rupees number).
+2. Likely Category from: ["Groceries & Milk", "Electricity & Utilities", "Bike Petrol & Commute", "Decoration Raw Materials", "Family & Baby Care", "Tea, Dining & Leisure", "House Rent & Maintenance", "Other Expenses"].
+3. Date in YYYY-MM-DD (or use today: ${new Date().toISOString().split('T')[0]}).
+4. Vendor name / brief item description notes.
+5. Probable account: default to "Salary Bank" for utility/grocery or "Side Biz / Cash" for decoration materials.
+
+Respond ONLY with this exact JSON format:
+{
+  "type": "expense",
+  "amount": number,
+  "category": string,
+  "account": "Salary Bank" | "Side Biz / Cash" | "Savings / Liquid Fund",
+  "notes": string,
+  "date": "YYYY-MM-DD"
+}`;
+
+          const payload = {
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  { text: prompt },
+                  {
+                    inlineData: {
+                      mimeType: mimeType,
+                      data: base64Data
+                    }
+                  }
+                ]
+              }
+            ],
+            generationConfig: {
+              responseMimeType: "application/json"
+            }
+          };
+
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
+          const result = await callGeminiWithBackoff(apiUrl, payload);
+          const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+          
+          if (!jsonText) throw new Error("Could not parse receipt");
+          const parsed = JSON.parse(jsonText);
+          applyParsedDataToForm(parsed);
+          showToast(`Scanned ₹${parsed.amount || ''} successfully!`, 'ph-check');
+        } catch (err) {
+          showToast('Failed to scan receipt: ' + err.message, 'ph-warning');
+        } finally {
+          loader.classList.add('hidden');
+          event.target.value = '';
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function openAiAdvisorModal() {
+      const modal = document.getElementById('aiAdvisorModal');
+      modal.classList.remove('hidden');
+      const selectedMonth = document.getElementById('monthFilter').value;
+      const [y, m] = selectedMonth.split('-');
+      const d = new Date(y, m - 1, 1);
+      document.getElementById('advisorMonthName').textContent = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      generateMonthlyAudit();
+    }
+
+    function closeAiAdvisorModal() {
+      document.getElementById('aiAdvisorModal').classList.add('hidden');
+    }
+
+    async function generateMonthlyAudit() {
+      const loader = document.getElementById('advisorLoading');
+      const content = document.getElementById('advisorContent');
+      loader.classList.remove('hidden');
+      content.classList.add('hidden');
+
+      const selectedMonth = document.getElementById('monthFilter').value;
+      const monthTxs = transactions.filter(t => t.date.startsWith(selectedMonth));
+
+      // Calculate context statistics
+      let salaryIncome = 0;
+      let decorationIncome = 0;
+      let outsideIncome = 0;
+      let totalOutflow = 0;
+      let decorExpense = 0;
+      const catSpends = {};
+
+      monthTxs.forEach(t => {
+        if (t.type === 'income') {
+          if (t.category === 'Salary') salaryIncome += t.amount;
+          else if (t.category === 'Decoration Business') decorationIncome += t.amount;
+          else if (t.category === 'Outside Work / Freelance') outsideIncome += t.amount;
+        } else if (t.type === 'expense') {
+          totalOutflow += t.amount;
+          catSpends[t.category] = (catSpends[t.category] || 0) + t.amount;
+          if (t.category === 'Decoration Raw Materials') decorExpense += t.amount;
+        }
+      });
+
+      const totalInflow = salaryIncome + decorationIncome + outsideIncome;
+      const netSurplus = totalInflow - totalOutflow;
+      const decorNetProfit = decorationIncome - decorExpense;
+
+      const prompt = `Act as an elite personal financial planner for a salaried individual in India who earns:
+- Net take-home salary: ₹28,000/month (with ₹3,800 PF deduction building retirement corpus).
+- Decoration side business (stage/backdrop setups).
+- Outside freelance work.
+
+Here is their actual ledger data for month ${selectedMonth}:
+- Total Inflow: ₹${totalInflow} (Salary: ₹${salaryIncome}, Decoration: ₹${decorationIncome}, Outside: ₹${outsideIncome})
+- Total Outflow (Expenses): ₹${totalOutflow}
+- Net Monthly Cash Surplus: ₹${netSurplus}
+- Decoration Gross Revenue: ₹${decorationIncome}, Raw Material Expenses: ₹${decorExpense}, Net Decoration Profit: ₹${decorNetProfit}
+- Category Expenses: ${JSON.stringify(catSpends)}
+
+Please provide a concise, high-value financial audit with:
+1. **Health Score & Key Takeaway (Out of 100)**: Quick 2-sentence summary.
+2. **Decoration Business Profitability**: Margin analysis and whether material costs are healthy.
+3. **Daily Living & Household Budget Health**: Highlight any category that exceeded 25% of salary.
+4. **Actionable Recommendations**: 3 bullet points on Emergency Fund allocation, mutual fund SIP capacity, and cash-in-hand buffer.
+Format cleanly with bold headers and HTML bullet tags. Keep tone encouraging, realistic, and tailored to Indian rupee finance.`;
+
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      try {
+        const result = await callGeminiWithBackoff(apiUrl, {
+          contents: [{ parts: [{ text: prompt }] }]
+        });
+        const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || "Unable to generate audit at this moment.";
+        
+        // Render simple Markdown-like text into safe HTML
+        content.innerHTML = formatMarkdown(text);
+      } catch (err) {
+        content.innerHTML = `<div class="p-4 rounded-xl bg-rose-50 text-rose-700 text-xs">Failed to load AI Audit: ${escapeHtml(err.message)}</div>`;
+      } finally {
+        loader.classList.add('hidden');
+        content.classList.remove('hidden');
+      }
+    }
+
+    function openChatDrawer() {
+      document.getElementById('aiChatDrawer').classList.remove('translate-x-full');
+      document.getElementById('chatInput').focus();
+    }
+
+    function closeChatDrawer() {
+      document.getElementById('aiChatDrawer').classList.add('translate-x-full');
+    }
+
+    function handleChatSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      sendChatMessage(text);
+    }
+
+    async function sendChatMessage(userText) {
+      const container = document.getElementById('chatMessages');
+
+      // Append User Message bubble
+      const userDiv = document.createElement('div');
+      userDiv.className = 'flex gap-2.5 items-start justify-end';
+      userDiv.innerHTML = `
+        <div class="bg-brand-600 text-white rounded-2xl rounded-tr-sm p-3 leading-relaxed max-w-[85%] text-xs sm:text-sm shadow-sm">
+          ${escapeHtml(userText)}
+        </div>
+      `;
+      container.appendChild(userDiv);
+
+      // Append Assistant Loading bubble
+      const botDiv = document.createElement('div');
+      botDiv.className = 'flex gap-2.5 items-start';
+      botDiv.innerHTML = `
+        <div class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 text-sm mt-0.5">
+          <i class="ph-fill ph-robot"></i>
+        </div>
+        <div class="bg-slate-100 rounded-2xl rounded-tl-sm p-3 text-slate-800 leading-relaxed max-w-[85%] text-xs sm:text-sm animate-pulse">
+          Thinking...
+        </div>
+      `;
+      container.appendChild(botDiv);
+      container.scrollTop = container.scrollHeight;
+
+      // Build context summary from active transactions
+      const txSummary = transactions.slice(0, 30).map(t => 
+        `${t.date}: ${t.type.toUpperCase()} of ₹${t.amount} (${t.category}, ${t.account}, notes: ${t.notes || ''})`
+      ).join('\n');
+
+      const systemPrompt = `You are a supportive, knowledgeable personal accountant assistant for an Indian user.
+User profile:
+- ₹28,000 monthly take-home salary (+ ₹3,800 employee PF deduction automatically saved for retirement).
+- Side Decoration business (~₹5,000/month).
+- Outside freelance work (~₹3,000-₹4,000/month).
+- Current ledger summary:
+${txSummary}
+
+Answer user questions accurately based on this ledger. If asked for advice, keep it practical, encouraging, and focused on building emergency savings, tracking decoration expenses, and SIP investing. Keep answers concise.`;
+
+      // Update multi-turn chat history
+      chatHistory.push({ role: 'user', parts: [{ text: userText }] });
+
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      try {
+        const payload = {
+          contents: chatHistory,
+          systemInstruction: { parts: [{ text: systemPrompt }] }
+        };
+
+        const result = await callGeminiWithBackoff(apiUrl, payload);
+        const reply = result?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I could not process that request.";
+
+        // Append to chat history
+        chatHistory.push({ role: 'model', parts: [{ text: reply }] });
+
+        botDiv.querySelector('.bg-slate-100').classList.remove('animate-pulse');
+        botDiv.querySelector('.bg-slate-100').innerHTML = formatMarkdown(reply);
+      } catch (err) {
+        botDiv.querySelector('.bg-slate-100').classList.remove('animate-pulse');
+        botDiv.querySelector('.bg-slate-100').innerHTML = `<span class="text-rose-600 font-medium">Error: ${escapeHtml(err.message)}</span>`;
+      } finally {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    /* ==========================================================
+       10. UTILITY HELPERS
+       ========================================================== */
+    function formatINR(val) {
+      if (isNaN(val)) return '₹0';
+      return '₹' + Number(val).toLocaleString('en-IN', {
+        maximumFractionDigits: 2,
+        minimumFractionDigits: 0
+      });
+    }
+
+    function escapeHtml(str) {
+      return (str || '')
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function formatMarkdown(text) {
+      if (!text) return '';
+      return text
+        .replace(/^### (.*$)/gim, '<h4 class="font-bold text-slate-900 text-sm mt-2 mb-1">$1</h4>')
+        .replace(/^## (.*$)/gim, '<h3 class="font-bold text-slate-900 text-sm sm:text-base mt-3 mb-1.5 border-b pb-1">$1</h3>')
+        .replace(/^# (.*$)/gim, '<h2 class="font-bold text-slate-900 text-base mt-3 mb-2">$1</h2>')
+        .replace(/\*\*(.*?)\*\*/gim, '<strong class="font-semibold text-slate-900">$1</strong>')
+        .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+        .replace(/^\s*\*\s(.*)$/gim, '<li class="ml-4 list-disc text-slate-700 py-0.5">$1</li>')
+        .replace(/^\s*-\s(.*)$/gim, '<li class="ml-4 list-disc text-slate-700 py-0.5">$1</li>')
+        .replace(/\n{2,}/g, '<div class="h-2"></div>')
+        .replace(/\n/g, '<br/>');
+    }
+
+    function showToast(message, iconClass = 'ph-info') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMsg.textContent = message;
+      toastIcon.className = `ph-bold ${iconClass} text-lg`;
+
+      toast.classList.remove('translate-y-[-120%]', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-[-120%]', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
